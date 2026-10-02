@@ -1,8 +1,18 @@
 # Security
 
+## Phase 3 backend
+
+The API accepts a Supabase access token only in the `Authorization: Bearer ...` header. It verifies the token through Supabase `auth.getUser`; it does not decode an unverified JWT and does not trust `userId` in request bodies, query strings, or paths. After verification, only a normalized `{ id, email }` context is attached to the request.
+
+`SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, and any future service-role key are backend environment variables. They are not `EXPO_PUBLIC_*` values. Tokens, passwords, keys, and authorization headers are excluded from logs. Production errors do not include stack traces.
+
+The API binds to `0.0.0.0` in development so a phone can reach it over the LAN. Configure `CORS_ORIGIN` for browser clients; native React Native requests are not governed by browser CORS. Per-user and per-IP rate limiting remains required before public launch, especially for future AI-generation endpoints.
+
 The mobile bundle may contain only public Expo/Supabase configuration. OpenAI, ElevenLabs, AWS secret credentials, Supabase service-role keys, and Google private credentials remain server/worker-only.
 
 Uploads are private by default and use presigned access. Every book query checks authenticated ownership server-side. User-facing errors are safe and actionable; provider details and stack traces stay in server logs. Deletion must remove source assets, generated audio, and associated metadata where appropriate.
+
+Phase 4 signs only the server-generated `users/{userId}/books/{bookId}/source/original.pdf` key for 10 minutes by default. The API verifies S3 object metadata before marking a book uploaded, and rejects unsupported MIME types and files above the configured maximum. AWS credentials remain server-only; the mobile app sees only the temporary upload URL and required upload headers.
 
 ## Phase 2 authentication
 
