@@ -18,7 +18,7 @@ export default function UploadScreen() {
     setFilename(asset.name);
     try {
       const book = await uploadPdf(asset, setProgress);
-      router.replace(`/book/${book.id}`);
+      router.replace(`/processing/${book.id}`);
     } catch (error) {
       setProgress(null);
       Alert.alert('Upload failed', error instanceof Error ? error.message : 'We could not upload this PDF. Please try again.');

@@ -26,3 +26,7 @@ Native iPhone uploads through Expo FileSystem do not require S3 CORS. Configure 
 `CREATED -> UPLOAD_PENDING -> UPLOADED`
 
 Signing or storage failures use `UPLOAD_FAILED`. `PROCESSING`, `READY`, and `FAILED` are reserved for future ingestion. Source PDFs do not expire automatically; incomplete multipart-upload cleanup can be added later.
+
+Phase 5 stores the normalized gzip artifact beside the source under `extracted/normalized.json.gz`. The worker uses authenticated server AWS access, never a public URL, and deletes that artifact when the owning book is deleted.
+
+New Phase 5.5 canonical artifacts use `content-assets/{contentAssetId}/extraction/{pipelineVersion}/normalized.json.gz`. Existing Phase 5 user-scoped artifacts are not migrated automatically. Source PDFs remain under each user's own `users/{userId}/books/{bookId}/source/original.pdf` path.

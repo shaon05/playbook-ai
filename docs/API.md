@@ -29,6 +29,7 @@ Authenticated mobile requests send `Authorization: Bearer <Supabase access token
 - `GET /api/v1/books/:bookId` returns one owned book.
 - `POST /api/v1/books/:bookId/upload-complete` verifies the expected S3 object and marks it `UPLOADED`.
 - `DELETE /api/v1/books/:bookId` deletes the owned source object and database metadata.
+- `GET /api/v1/books/:bookId/processing-status` returns safe status, stage, and progress for the owned book.
 
 Success responses use `{ "data": ... }`. Errors use `{ "error": { "code": "...", "message": "..." } }`; internal stack traces are never returned.
 

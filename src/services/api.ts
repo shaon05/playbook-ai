@@ -36,6 +36,7 @@ export type CreateBookResponse = {
   requiredHeaders: Record<string, string>;
   expiresAt: string;
 };
+export type ProcessingStatus = { bookId: string; status: string; progress: number; stage: string; errorCode: string | null; jobStatus: string | null };
 
 export async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
   if (!apiUrl) throw new Error("EXPO_PUBLIC_API_URL is not configured.");
@@ -72,8 +73,10 @@ export function getBook(bookId: string) {
 }
 
 export function completeBookUpload(bookId: string) {
-  return apiRequest<ApiBook>(`/books/${encodeURIComponent(bookId)}/upload-complete`, { method: 'POST', body: JSON.stringify({}) });
+  return apiRequest<{ book: ApiBook; job: { id: string; status: string; progress_percent: number } }>(`/books/${encodeURIComponent(bookId)}/upload-complete`, { method: 'POST', body: JSON.stringify({}) });
 }
+
+export function getProcessingStatus(bookId: string) { return apiRequest<ProcessingStatus>(`/books/${encodeURIComponent(bookId)}/processing-status`); }
 
 export function deleteBook(bookId: string) {
   return apiRequest<void>(`/books/${encodeURIComponent(bookId)}`, { method: 'DELETE' });

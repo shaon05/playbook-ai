@@ -96,10 +96,30 @@ export function createBooksRouter(env: ApiEnv, storage: StorageProvider, clientF
       const { data: updated, error: updateError } = await client.from("books").update({ status: "UPLOADED" }).eq("id", bookId).eq("user_id", req.auth!.id).select("id,user_id,title,author,status,original_filename,mime_type,file_size_bytes,created_at,updated_at").single();
       if (updateError || !updated) throw new ApiError(500, "BOOK_UPDATE_FAILED", "Unable to complete the book upload.");
       await client.from("book_files").update({ etag: metadata.etag ?? null }).eq("id", file.id).eq("user_id", req.auth!.id);
-      res.json({ data: updated });
+      const { data: job, error: jobError } = await client.from("processing_jobs").insert({ user_id: req.auth!.id, book_id: bookId, job_type: "DOCUMENT_EXTRACTION", status: "QUEUED", progress_percent: 0 }).select("id,status,progress_percent").single();
+      if (jobError || !job) {
+        console.error(JSON.stringify({ event: "extraction_queue_insert_failed", code: jobError?.code ?? "NO_JOB", message: jobError?.message ?? "No processing job was returned." }));
+        throw new ApiError(500, "EXTRACTION_QUEUE_FAILED", "The upload finished, but document preparation could not be started.");
+      }
+      const { data: queuedBook, error: queuedError } = await client.from("books").update({ status: "EXTRACTION_QUEUED" }).eq("id", bookId).eq("user_id", req.auth!.id).select("id,user_id,title,author,status,original_filename,mime_type,file_size_bytes,created_at,updated_at").single();
+      if (queuedError || !queuedBook) throw new ApiError(500, "EXTRACTION_QUEUE_FAILED", "The upload finished, but document preparation could not be started.");
+      res.json({ data: { book: queuedBook, job } });
     } catch (error) {
       next(error);
     }
+  });
+
+  router.get("/:bookId/processing-status", async (req, res, next) => {
+    try {
+      const bookId = uuidSchema.parse(req.params.bookId);
+      const client = req.supabase!;
+      const { data: book, error: bookError } = await client.from("books").select("id,status").eq("id", bookId).eq("user_id", req.auth!.id).maybeSingle();
+      if (bookError) throw new ApiError(500, "BOOK_LOOKUP_FAILED", "Unable to load processing status.");
+      if (!book) throw new ApiError(404, "BOOK_NOT_FOUND", "Book not found.");
+      const { data: job } = await client.from("processing_jobs").select("status,progress_percent,error_code,error_message").eq("book_id", bookId).eq("user_id", req.auth!.id).eq("job_type", "DOCUMENT_EXTRACTION").order("created_at", { ascending: false }).limit(1).maybeSingle();
+      const stage = book.status === "UPLOADED" ? "Upload complete" : book.status === "EXTRACTION_QUEUED" ? "Preparing your book" : book.status === "EXTRACTING" ? "Reading your document" : book.status === "OCR_REQUIRED" ? "Additional text recognition required" : book.status === "TEXT_READY" ? "Your book is ready for the next step" : book.status === "EXTRACTION_FAILED" ? "We couldn't read this document." : "Preparing your book";
+      res.json({ data: { bookId, status: book.status, progress: job?.progress_percent ?? (book.status === "TEXT_READY" ? 100 : 0), stage, errorCode: book.status === "EXTRACTION_FAILED" ? job?.error_code ?? null : null, jobStatus: job?.status ?? null } });
+    } catch (error) { next(error); }
   });
 
   router.delete("/:bookId", async (req, res, next) => {
@@ -109,8 +129,10 @@ export function createBooksRouter(env: ApiEnv, storage: StorageProvider, clientF
       const { data: file, error: fileError } = await client.from("book_files").select("id,storage_key").eq("book_id", bookId).eq("user_id", req.auth!.id).maybeSingle();
       if (fileError) throw new ApiError(500, "BOOK_LOOKUP_FAILED", "Unable to delete this book.");
       if (!file) throw new ApiError(404, "BOOK_NOT_FOUND", "Book not found.");
+      const { data: extraction } = await client.from("document_extractions").select("normalized_storage_key").eq("book_id", bookId).eq("user_id", req.auth!.id).maybeSingle();
       try {
         await storage.deleteObject({ key: file.storage_key });
+        if (extraction?.normalized_storage_key) await storage.deleteObject({ key: extraction.normalized_storage_key });
       } catch {
         throw new ApiError(502, "S3_ERROR", "Unable to remove the uploaded file.");
       }

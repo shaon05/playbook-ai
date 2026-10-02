@@ -24,5 +24,5 @@ export async function uploadPdf(asset: DocumentPickerAsset, onProgress: (progres
   if (result.status < 200 || result.status >= 300) throw new Error('The PDF upload failed.');
   const completed = await completeBookUpload(prepared.book.id);
   onProgress({ phase: 'complete', percent: 100 });
-  return completed;
+  return completed.book;
 }

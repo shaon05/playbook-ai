@@ -1,4 +1,6 @@
-import { DeleteObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { createWriteStream } from "node:fs";
+import { pipeline } from "node:stream/promises";
+import { DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import type { ApiEnv } from "../../config/env";
 import type { StorageObjectMetadata, StorageProvider, StorageUpload } from "./storage.provider";
@@ -34,5 +36,15 @@ export class S3StorageProvider implements StorageProvider {
 
   async deleteObject(input: { key: string }): Promise<void> {
     await this.client.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: input.key }));
+  }
+
+  async downloadObject(input: { key: string; destination: string }): Promise<void> {
+    const result = await this.client.send(new GetObjectCommand({ Bucket: this.bucket, Key: input.key }));
+    if (!result.Body) throw new Error("S3 object body was empty");
+    await pipeline(result.Body as NodeJS.ReadableStream, createWriteStream(input.destination));
+  }
+
+  async putObject(input: { key: string; body: Uint8Array; contentType: string; contentEncoding?: string }): Promise<void> {
+    await this.client.send(new PutObjectCommand({ Bucket: this.bucket, Key: input.key, Body: input.body, ContentType: input.contentType, ContentEncoding: input.contentEncoding }));
   }
 }

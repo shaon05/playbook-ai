@@ -14,6 +14,10 @@ Uploads are private by default and use presigned access. Every book query checks
 
 Phase 4 signs only the server-generated `users/{userId}/books/{bookId}/source/original.pdf` key for 10 minutes by default. The API verifies S3 object metadata before marking a book uploaded, and rejects unsupported MIME types and files above the configured maximum. AWS credentials remain server-only; the mobile app sees only the temporary upload URL and required upload headers.
 
+Phase 5 keeps extraction server-side. The worker never accepts a storage key, bucket, or user ID from mobile; it reads the source key from an owned database row. Temporary source files are job-scoped and deleted in cleanup blocks. Extracted text remains private in S3, is not logged, sent to AI providers, or exposed through ordinary book endpoints.
+
+Phase 5.5 does not share original PDFs or user-owned records. Mobile cannot submit source hashes, normalized hashes, content asset IDs, cache status, or pipeline versions as trusted values. Internal content assets are not directly readable by the authenticated mobile role.
+
 ## Phase 2 authentication
 
 The mobile client uses only `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. Sessions persist through SecureStore on native and AsyncStorage on web, with automatic token refresh while the app is active. The Supabase service-role key is never read by the mobile client.

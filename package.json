@@ -51,7 +51,8 @@
     "api:dev": "npm --prefix apps/api run dev",
     "api:build": "npm --prefix apps/api run build",
     "api:typecheck": "npm --prefix apps/api run typecheck",
-    "api:test": "npm --prefix apps/api test"
+    "api:test": "npm --prefix apps/api test",
+    "api:worker": "npm --prefix apps/api run worker"
   },
   "private": true
 }

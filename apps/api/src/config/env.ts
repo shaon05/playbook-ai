@@ -20,6 +20,10 @@ const envSchema = z.object({
   AWS_SECRET_ACCESS_KEY: optionalSecret,
   MAX_UPLOAD_SIZE_MB: z.coerce.number().positive().max(1024).default(100),
   S3_PRESIGNED_URL_EXPIRES_SECONDS: z.coerce.number().int().min(60).max(900).default(600),
+  EXTRACTION_POLL_INTERVAL_MS: z.coerce.number().int().min(1000).default(3000),
+  EXTRACTION_MAX_ATTEMPTS: z.coerce.number().int().min(1).max(5).default(3),
+  EXTRACTION_TEMP_DIR: z.string().default(""),
+  EXTRACTION_PIPELINE_VERSION: z.string().min(1).default("v1"),
 });
 
 export type ApiEnv = z.infer<typeof envSchema>;

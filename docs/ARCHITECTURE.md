@@ -28,3 +28,7 @@ External services must be behind provider interfaces (`AIProvider`, `TTSProvider
 The mobile client now has one Supabase client in `src/lib/supabase.ts` and one `AuthProvider` in `src/providers/auth-provider.tsx`. Expo Router protected screens guard the existing tabs, book, player, processing, and profile-edit routes.
 
 Phase 4 adds a storage provider boundary. `S3StorageProvider` owns AWS SDK calls; book routes receive a `StorageProvider` and never construct S3 commands directly. The mobile app picks PDFs, requests a presigned URL, uploads directly to S3, and calls the API to verify completion.
+
+Phase 5 adds `apps/api/src/worker.ts` as a temporary single-process job runner over `processing_jobs`. It claims queued jobs before extraction, uses trusted `book_files` records, writes private normalized artifacts, and cleans temporary files. It deliberately does not add Redis or BullMQ yet.
+
+Phase 5.5 separates user-owned `books` from internal reusable `content_assets`. Source objects remain user-scoped; only compatible processing results may be reused.
