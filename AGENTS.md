@@ -39,3 +39,13 @@ Docs: https://docs.expo.dev/eas/index.md
 - If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
 - Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
 - Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
+
+## Product architecture
+
+- Read the relevant files in `docs/` before editing product architecture or backend contracts.
+- Preserve the modular-monolith boundaries described in `docs/ARCHITECTURE.md`; do not scatter provider SDK calls through screens or controllers.
+- Never expose server secrets to the mobile app or commit real `.env` files.
+- Reuse the design tokens in `src/constants/theme.ts` and avoid duplicating UI components.
+- Validate external data at boundaries and use migrations for destructive database changes.
+- Run `npm run lint` and `npm run typecheck` after meaningful changes.
+- Document significant architecture decisions and avoid unrelated feature work.

@@ -7,24 +7,34 @@ import '@/global.css';
 
 import { Platform } from 'react-native';
 
-export const Colors = {
-  light: {
-    text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
-  },
-  dark: {
-    text: '#ffffff',
-    background: '#000000',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
-  },
+const palette = {
+  background: '#090A0D',
+  surface: '#12141A',
+  elevated: '#191C23',
+  text: '#F8F9FB',
+  textSecondary: '#9DA4B2',
+  accent: '#7C5CFC',
+  accentSecondary: '#2DD4BF',
+  success: '#35C987',
+  warning: '#F4B740',
+  danger: '#FF6464',
 } as const;
 
-export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
+// Keep light/dark aliases for the starter components while the product is dark-first.
+export const Colors = {
+  ...palette,
+  light: palette,
+  dark: palette,
+  backgroundElement: palette.surface,
+  backgroundSelected: palette.elevated,
+} as const;
+
+export const Theme = {
+  light: Colors,
+  dark: Colors,
+} as const;
+
+export type ThemeColor = Exclude<keyof typeof Colors, 'light' | 'dark'>;
 
 export const Fonts = Platform.select({
   ios: {
@@ -55,10 +65,13 @@ export const Spacing = {
   half: 2,
   one: 4,
   two: 8,
-  three: 16,
-  four: 24,
-  five: 32,
-  six: 64,
+  three: 12,
+  four: 16,
+  five: 20,
+  six: 24,
+  seven: 32,
+  eight: 40,
+  nine: 48,
 } as const;
 
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;

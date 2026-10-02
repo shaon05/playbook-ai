@@ -1,0 +1,6 @@
+import { useState } from 'react';
+import { Pressable, StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
+import { Colors, Spacing } from '@/constants/theme';
+
+export function PasswordInput({ label = 'Password', ...props }: TextInputProps & { label?: string }) { const [visible, setVisible] = useState(false); return <View style={styles.container}><Text style={styles.label}>{label}</Text><View style={styles.row}><TextInput {...props} accessibilityLabel={label} secureTextEntry={!visible} placeholderTextColor={Colors.textSecondary} style={styles.input} /><Pressable onPress={() => setVisible((value) => !value)} accessibilityRole="button" accessibilityLabel={visible ? 'Hide password' : 'Show password'}><Text style={styles.toggle}>{visible ? 'Hide' : 'Show'}</Text></Pressable></View></View>; }
+const styles = StyleSheet.create({ container: { marginTop: Spacing.four }, label: { color: Colors.textSecondary, fontSize: 13, fontWeight: '700', marginBottom: Spacing.one }, row: { minHeight: 52, borderRadius: 14, backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.elevated, flexDirection: 'row', alignItems: 'center' }, input: { flex: 1, color: Colors.text, paddingHorizontal: Spacing.four, fontSize: 16 }, toggle: { color: Colors.accentSecondary, fontSize: 13, fontWeight: '800', paddingHorizontal: Spacing.three } });
