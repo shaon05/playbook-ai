@@ -75,4 +75,7 @@ export const Spacing = {
 } as const;
 
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
+export const MiniPlayerBottomOffset = 82;
+export const MiniPlayerHeight = 64;
+export const PersistentPlayerContentInset = MiniPlayerBottomOffset + MiniPlayerHeight + Spacing.four;
 export const MaxContentWidth = 800;

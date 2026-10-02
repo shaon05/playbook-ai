@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 
-import { Colors, Spacing } from '@/constants/theme';
+import { Colors, MiniPlayerBottomOffset, MiniPlayerHeight, Spacing } from '@/constants/theme';
 import { findBook } from '@/data/mock-books';
 import { usePlayer } from '@/state/player-context';
 
@@ -20,7 +20,7 @@ export function MiniPlayer() {
 }
 
 const styles = StyleSheet.create({
-  container: { position: 'absolute', left: Spacing.four, right: Spacing.four, bottom: 82, minHeight: 64, backgroundColor: Colors.elevated, borderRadius: 14, padding: Spacing.two, flexDirection: 'row', alignItems: 'center', gap: Spacing.three, overflow: 'hidden' },
+  container: { position: 'absolute', left: Spacing.four, right: Spacing.four, bottom: MiniPlayerBottomOffset, minHeight: MiniPlayerHeight, backgroundColor: Colors.elevated, borderRadius: 14, padding: Spacing.two, flexDirection: 'row', alignItems: 'center', gap: Spacing.three, overflow: 'hidden' },
   cover: { width: 48, height: 48, borderRadius: 10, backgroundColor: Colors.accent, alignItems: 'center', justifyContent: 'center' },
   coverText: { color: Colors.text, fontSize: 22, fontWeight: '800' },
   copy: { flex: 1 },
