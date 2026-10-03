@@ -27,6 +27,28 @@ function appWithBookServices() {
   return { app: createApp({ env, supabase: fake, storage }), getInsertedUserId: () => insertedUserId };
 }
 
+function appWithUploadFailureState() {
+  let status = "UPLOAD_PENDING";
+  const fake = {
+    auth: { getUser: async () => ({ data: { user: { id: "user-123", email: "user@example.com" } }, error: null }) },
+    from: (table: string) => {
+      if (table !== "books") return {};
+      return {
+        update: (values: { status: string }) => {
+          const chain = {
+            eq: () => chain,
+            in: () => chain,
+            select: () => chain,
+            maybeSingle: async () => { status = values.status; return { data: { id: "00000000-0000-4000-8000-000000000001", status }, error: null }; },
+          };
+          return chain;
+        },
+      };
+    },
+  } as never;
+  return { app: createApp({ env, supabase: fake }), getStatus: () => status };
+}
+
 describe("API foundation", () => {
   it("returns public health status", async () => {
     const response = await request(createApp({ env })).get("/api/v1/health");
@@ -74,5 +96,13 @@ describe("API foundation", () => {
     expect(response.status).toBe(201);
     expect(response.body.data.uploadUrl).toBe("https://s3.example/upload");
     expect(services.getInsertedUserId()).toBe("user-123");
+  });
+
+  it("persists a failed provisional upload without creating a processing job", async () => {
+    const services = appWithUploadFailureState();
+    const response = await request(services.app).post("/api/v1/books/00000000-0000-4000-8000-000000000001/upload-failed").set("Authorization", "Bearer verified-token").send({});
+    expect(response.status).toBe(200);
+    expect(response.body.data.status).toBe("UPLOAD_FAILED");
+    expect(services.getStatus()).toBe("UPLOAD_FAILED");
   });
 });

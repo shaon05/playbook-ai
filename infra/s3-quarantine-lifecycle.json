@@ -1,0 +1,13 @@
+{
+  "rule": "playbook-quarantine-retention",
+  "status": "Enabled",
+  "abortIncompleteMultipartUploadAfterDays": 1,
+  "prefixes": {
+    "quarantine/": {
+      "abandonedUploadDays": "${QUARANTINE_ABANDONED_RETENTION_DAYS}",
+      "rejectedDays": "${QUARANTINE_REJECTED_RETENTION_DAYS}",
+      "maliciousDays": "${QUARANTINE_MALICIOUS_RETENTION_DAYS}"
+    }
+  },
+  "requirements": ["S3 Block Public Access", "Bucket owner enforced object ownership", "No public ACL", "Least-privilege scanner and worker IAM roles"]
+}

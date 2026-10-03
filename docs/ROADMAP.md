@@ -28,4 +28,6 @@ Implemented: source-byte hashing, canonical normalized-content hashing, versione
 7. Real player and progress persistence.
 8. BullMQ jobs, usage ledger, Remember, subscriptions, and later Story Mode.
 
+Phase 6.5D creator manuscript upload and processing integration is implemented. Phase 7 audio generation remains intentionally blocked until the creator review and publication flow is validated in the development environment.
+
 The next development phase is Phase 2: authentication with Supabase, beginning with session handling and protected routes while keeping provider secrets out of the client.

@@ -25,6 +25,7 @@
     },
     "plugins": [
       "expo-router",
+      ["expo-camera", { "cameraPermission": "PlayBook needs camera access to photograph document pages." }],
       [
         "expo-splash-screen",
         {

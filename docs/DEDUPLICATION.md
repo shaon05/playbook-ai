@@ -18,4 +18,6 @@ The first cache level matches source bytes and extraction version, so normal ext
 
 Source PDFs remain at each user's private key. Content assets contain only reusable processing metadata and canonical extraction artifacts. User A and User B retain separate book records and all future user-owned progress, notes, bookmarks, favorites, and metadata. Deleting one book deletes its source and user extraction metadata but leaves `content_assets` intact while any book references remain. Zero-reference cleanup is deliberately deferred to a retention job.
 
+Creator manuscript review uses the trusted source hash first and the normalized-content hash after extraction. A same-creator match reuses compatible canonical processing. A cross-creator match creates `POTENTIAL_DUPLICATE_MANUSCRIPT` with `requires_review=true`; it never grants or implies an originality or copyright decision. A `NO_MATCH` is not `ORIGINAL_VERIFIED`. Technical cache reuse never transfers private uploader identity or user-specific metadata.
+
 Future keys should include compatible model/prompt/pipeline versions for AI and voice settings for TTS. No public content, source sharing, OCR, AI, or audio is implemented here.

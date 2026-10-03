@@ -7,6 +7,8 @@
     "@react-native-async-storage/async-storage": "2.2.0",
     "@supabase/supabase-js": "^2.117.2",
     "expo": "~57.0.26",
+    "expo-asset": "^57.0.18",
+    "expo-camera": "~57.0.6",
     "expo-constants": "~57.0.20",
     "expo-device": "~57.0.2",
     "expo-document-picker": "~57.0.3",
@@ -14,6 +16,7 @@
     "expo-font": "~57.0.4",
     "expo-glass-effect": "~57.0.4",
     "expo-image": "~57.0.5",
+    "expo-image-picker": "~57.0.20",
     "expo-linking": "~57.0.11",
     "expo-router": "~57.0.24",
     "expo-secure-store": "~57.0.4",
@@ -52,7 +55,16 @@
     "api:build": "npm --prefix apps/api run build",
     "api:typecheck": "npm --prefix apps/api run typecheck",
     "api:test": "npm --prefix apps/api test",
-    "api:worker": "npm --prefix apps/api run worker"
+    "api:worker": "npm --prefix apps/api run worker",
+    "analytics:aggregate": "npm --prefix apps/api run analytics:aggregate",
+    "catalog:seed": "npm --prefix apps/api run catalog:seed",
+    "creator:status": "npm --prefix apps/api run creator:status --",
+    "creator:approve": "npm --prefix apps/api run creator:approve --",
+    "security:e2e": "npm --prefix apps/api run security:e2e",
+    "db:check": "npm --prefix apps/api run db:check",
+    "api:load:test": "npm --prefix apps/api run load:test --",
+    "aws:deploy:upload-security": "powershell -ExecutionPolicy Bypass -File ./infra/deploy-upload-security.ps1",
+    "aws:verify:upload-security": "powershell -ExecutionPolicy Bypass -File ./infra/verify-upload-security.ps1"
   },
   "private": true
 }

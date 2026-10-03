@@ -12,7 +12,7 @@ export class S3StorageProvider implements StorageProvider {
   constructor(private readonly env: ApiEnv) {
     this.client = new S3Client({
       region: env.AWS_REGION,
-      ...(env.AWS_ACCESS_KEY_ID && env.AWS_SECRET_ACCESS_KEY ? { credentials: { accessKeyId: env.AWS_ACCESS_KEY_ID, secretAccessKey: env.AWS_SECRET_ACCESS_KEY } } : {}),
+      ...(env.AWS_ACCESS_KEY_ID && env.AWS_SECRET_ACCESS_KEY ? { credentials: { accessKeyId: env.AWS_ACCESS_KEY_ID, secretAccessKey: env.AWS_SECRET_ACCESS_KEY, ...(env.AWS_SESSION_TOKEN ? { sessionToken: env.AWS_SESSION_TOKEN } : {}) } } : {}),
     });
     this.bucket = env.AWS_S3_BUCKET;
   }
@@ -21,6 +21,12 @@ export class S3StorageProvider implements StorageProvider {
     const command = new PutObjectCommand({ Bucket: this.bucket, Key: input.key, ContentType: input.contentType, ContentLength: input.contentLength });
     const url = await getSignedUrl(this.client, command, { expiresIn: input.expiresInSeconds });
     return { bucket: this.bucket, key: input.key, url, expiresAt: new Date(Date.now() + input.expiresInSeconds * 1000).toISOString(), headers: { "Content-Type": input.contentType, "Content-Length": String(input.contentLength) } };
+  }
+
+  async createDownloadUrl(input: { key: string; contentType?: string; expiresInSeconds: number }): Promise<StorageUpload> {
+    const command = new GetObjectCommand({ Bucket: this.bucket, Key: input.key, ...(input.contentType ? { ResponseContentType: input.contentType } : {}) });
+    const url = await getSignedUrl(this.client, command, { expiresIn: input.expiresInSeconds });
+    return { bucket: this.bucket, key: input.key, url, expiresAt: new Date(Date.now() + input.expiresInSeconds * 1000).toISOString(), headers: {} };
   }
 
   async getObjectMetadata(input: { key: string }): Promise<StorageObjectMetadata | null> {

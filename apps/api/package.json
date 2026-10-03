@@ -7,18 +7,28 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "worker": "tsx src/worker.ts",
+    "analytics:aggregate": "tsx src/analytics/aggregate.ts",
+    "catalog:seed": "tsx src/seed/development-catalog.ts",
+    "creator:status": "tsx src/creator/status.ts",
+    "creator:approve": "tsx src/creator/approve.ts",
+    "security:e2e": "tsx src/security/e2e.ts",
+    "db:check": "tsx src/db/check.ts",
+    "load:test": "tsx src/load-testing/cli.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1145.0",
     "@aws-sdk/s3-request-presigner": "^3.1145.0",
+    "@google-cloud/documentai": "^10.1.1",
     "@supabase/supabase-js": "^2.117.2",
     "cors": "^2.8.5",
     "dotenv": "^17.4.2",
     "express": "^5.1.0",
     "helmet": "^8.1.0",
+    "music-metadata": "^11.16.1",
     "pdfjs-dist": "^6.3.289",
+    "sharp": "^0.35.5",
     "zod": "^3.25.76"
   },
   "devDependencies": {

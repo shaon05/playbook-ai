@@ -11,3 +11,5 @@ Phase 5 adds `supabase/migrations/20261004000000_create_extraction_pipeline.sql`
 The same Phase 5.5 migration adds `content_assets`, `books.content_asset_id`, `book_files.source_sha256`, and extraction links. `content_assets` has no user owner and is denied direct access to the mobile authenticated role; the worker uses the server-only service role. Its unique source-hash/version index prevents duplicate canonical extraction ownership.
 
 Every user-owned table includes an ownership path back to the authenticated user. Row-level security is required. PDFs and audio remain in private S3 objects; PostgreSQL stores metadata and object keys. Schema changes must be additive migrations with reviewed rollback considerations.
+
+Phase 6.5D adds creator manuscript metadata, submission-to-processing references, `processing_jobs.creator_submission_id`, and current favorite/follower snapshot metrics. Creator source remains private; canonical `content_assets` remain reusable internal records.

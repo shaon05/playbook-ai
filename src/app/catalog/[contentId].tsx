@@ -1,0 +1,9 @@
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Colors, Spacing } from '@/constants/theme';
+import { getCatalogContent, type CatalogResult } from '@/services/api';
+
+export default function CatalogContentScreen() { const { contentId } = useLocalSearchParams<{ contentId: string }>(); const [content, setContent] = useState<CatalogResult | null>(null); useEffect(() => { if (!contentId) return; void getCatalogContent(contentId).then(setContent).catch(() => setContent(null)); }, [contentId]); return <SafeAreaView style={styles.safe}><ScrollView contentContainerStyle={styles.content}><Pressable onPress={() => router.back()}><Text style={styles.back}>‹ Search</Text></Pressable>{content ? <><Text style={styles.title}>{content.title}</Text><Text style={styles.author}>{content.author_display_name ?? 'PlayBook creator'}</Text><Text style={styles.body}>{content.description ?? 'Public story metadata is ready. Audio will be available in a future phase.'}</Text><Text style={styles.note}>Audio processing is coming soon.</Text></> : <ActivityIndicator color={Colors.accentSecondary} />}</ScrollView></SafeAreaView>; }
+const styles = StyleSheet.create({ safe: { flex: 1, backgroundColor: Colors.background }, content: { padding: Spacing.six }, back: { color: Colors.accentSecondary, fontWeight: '700' }, title: { color: Colors.text, fontSize: 30, fontWeight: '800', marginTop: Spacing.seven }, author: { color: Colors.textSecondary, marginTop: Spacing.one }, body: { color: Colors.textSecondary, fontSize: 16, lineHeight: 24, marginTop: Spacing.seven }, note: { color: Colors.accentSecondary, marginTop: Spacing.seven, fontWeight: '800' } });

@@ -18,6 +18,7 @@ const palette = {
   success: '#35C987',
   warning: '#F4B740',
   danger: '#FF6464',
+  border: '#2A2E38',
 } as const;
 
 // Keep light/dark aliases for the starter components while the product is dark-first.

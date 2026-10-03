@@ -1,0 +1,14 @@
+alter table public.creator_submissions add column if not exists source_original_filename text;
+alter table public.creator_submissions add column if not exists source_mime_type text;
+alter table public.creator_submissions add column if not exists source_size_bytes bigint;
+alter table public.creator_submissions add column if not exists source_etag text;
+alter table public.creator_submissions add column if not exists source_sha256 text;
+alter table public.creator_submissions add column if not exists processing_book_id uuid references public.books(id) on delete set null;
+alter table public.creator_submissions add column if not exists processing_job_id uuid references public.processing_jobs(id) on delete set null;
+alter table public.creator_submissions add column if not exists content_asset_id uuid references public.content_assets(id) on delete set null;
+alter table public.creator_submissions add column if not exists processing_error_code text;
+alter table public.processing_jobs add column if not exists creator_submission_id uuid references public.creator_submissions(id) on delete set null;
+create unique index if not exists creator_submission_active_job_unique on public.processing_jobs(creator_submission_id, job_type) where creator_submission_id is not null and status in ('QUEUED','RUNNING');
+create index if not exists creator_submissions_source_hash_idx on public.creator_submissions(source_sha256);
+alter table public.creator_content_analytics_daily add column if not exists current_favorites bigint not null default 0;
+alter table public.creator_content_analytics_daily add column if not exists current_followers bigint not null default 0;

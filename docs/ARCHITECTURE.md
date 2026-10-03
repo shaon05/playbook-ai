@@ -32,3 +32,5 @@ Phase 4 adds a storage provider boundary. `S3StorageProvider` owns AWS SDK calls
 Phase 5 adds `apps/api/src/worker.ts` as a temporary single-process job runner over `processing_jobs`. It claims queued jobs before extraction, uses trusted `book_files` records, writes private normalized artifacts, and cleans temporary files. It deliberately does not add Redis or BullMQ yet.
 
 Phase 5.5 separates user-owned `books` from internal reusable `content_assets`. Source objects remain user-scoped; only compatible processing results may be reused.
+
+Phase 6.5D reuses the same worker for creator manuscripts. An approved submission creates a server-owned internal book/file processing record and links the queued job back to the submission. Worker completion maps technical extraction/OCR/analysis states to creator-facing `PROCESSING`, `PROCESSING_FAILED`, and `READY_FOR_CREATOR_REVIEW` states.

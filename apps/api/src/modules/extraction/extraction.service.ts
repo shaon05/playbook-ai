@@ -6,11 +6,28 @@ export const extractionQualityConfig = { minMeaningfulCharsPerPage: 80, ocrQuali
 export type ExtractedPage = { pageNumber: number; text: string; characterCount: number; wordCount: number; characterStart: number; characterEnd: number; hasText: boolean };
 export type ExtractionResult = { pageCount: number; pagesWithText: number; totalCharacters: number; totalWords: number; qualityScore: number; requiresOcr: boolean; pages: ExtractedPage[]; sourceHash: string; normalizedContentHash: string; artifact: Uint8Array };
 
-function normalizeText(value: string) {
+export function normalizeText(value: string) {
   return value.normalize("NFKC").replace(/\r\n?/g, "\n").replace(/[ \t]+/g, " ").replace(/\n{3,}/g, "\n\n").split("\n").map((line) => line.replace(/\s+$/g, "").trimStart()).join("\n").trim();
 }
 
 function wordCount(text: string) { return text ? text.split(/\s+/).filter(Boolean).length : 0; }
+
+export function createNormalizedExtraction(pages: Array<{ pageNumber: number; text: string; confidence?: number }>) {
+  const normalizedPages = pages.map((page, index) => {
+    const text = normalizeText(page.text);
+    const characterStart = pages.slice(0, index).reduce((sum, previous) => sum + normalizeText(previous.text).length + 2, 0);
+    return { pageNumber: page.pageNumber, text, characterCount: text.length, wordCount: wordCount(text), characterStart, characterEnd: characterStart + text.length, hasText: text.length >= extractionQualityConfig.minMeaningfulCharsPerPage, confidence: page.confidence };
+  });
+  const totalCharacters = normalizedPages.reduce((sum, page) => sum + page.characterCount, 0);
+  const totalWords = normalizedPages.reduce((sum, page) => sum + page.wordCount, 0);
+  const pagesWithText = normalizedPages.filter((page) => page.hasText).length;
+  const average = normalizedPages.length ? totalCharacters / normalizedPages.length : 0;
+  const qualityScore = normalizedPages.length ? Math.max(0, Math.min(1, (pagesWithText / normalizedPages.length) * 0.6 + Math.min(1, average / 1200) * 0.4)) : 0;
+  const canonicalText = normalizedPages.map((page) => page.text).join("\n\n");
+  const normalizedContentHash = createHash("sha256").update(canonicalText, "utf8").digest("hex");
+  const artifact = gzipSync(Buffer.from(JSON.stringify({ version: 1, pageCount: normalizedPages.length, totalCharacters, totalWords, pages: normalizedPages.map(({ confidence: _confidence, ...page }) => page) })));
+  return { pages: normalizedPages, pageCount: normalizedPages.length, pagesWithText, totalCharacters, totalWords, qualityScore, normalizedContentHash, canonicalText, artifact };
+}
 
 export async function extractPdf(bytes: Uint8Array, bookId: string): Promise<ExtractionResult> {
   if (bytes.length < 5 || new TextDecoder().decode(bytes.slice(0, 5)) !== "%PDF-") throw new ApiError(422, "INVALID_PDF", "The uploaded file doesn't appear to be a valid PDF.");

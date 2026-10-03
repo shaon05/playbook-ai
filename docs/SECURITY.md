@@ -18,6 +18,10 @@ Phase 5 keeps extraction server-side. The worker never accepts a storage key, bu
 
 Phase 5.5 does not share original PDFs or user-owned records. Mobile cannot submit source hashes, normalized hashes, content asset IDs, cache status, or pipeline versions as trusted values. Internal content assets are not directly readable by the authenticated mobile role.
 
+Creator manuscript upload uses the private `creators/{creatorId}/submissions/{submissionId}/source/original.pdf` prefix. The API validates ownership, PDF type, size, expected server-derived key, and S3 object metadata before persisting the source. Creator approval creates the internal processing link; clients cannot supply `creatorId`, `storageKey`, `contentAssetId`, processing status, catalog status, or analytics totals. Hash reuse is strictly a technical optimization and never substitutes for rights declaration or moderation.
+
+Phase 6.5E adds quarantine upload records, server-side magic-byte checks, explicit malware-scanner abstraction, security events, typed account restrictions, and a centralized worker gate requiring CLEAN plus VALID before extraction, OCR, analysis, or creator processing.
+
 ## Phase 2 authentication
 
 The mobile client uses only `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. Sessions persist through SecureStore on native and AsyncStorage on web, with automatic token refresh while the app is active. The Supabase service-role key is never read by the mobile client.

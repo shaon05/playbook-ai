@@ -14,6 +14,7 @@ export type StorageObjectMetadata = {
 
 export interface StorageProvider {
   createUploadUrl(input: { key: string; contentType: string; contentLength: number; expiresInSeconds: number }): Promise<StorageUpload>;
+  createDownloadUrl?(input: { key: string; contentType?: string; expiresInSeconds: number }): Promise<StorageUpload>;
   getObjectMetadata(input: { key: string }): Promise<StorageObjectMetadata | null>;
   deleteObject(input: { key: string }): Promise<void>;
   downloadObject(input: { key: string; destination: string }): Promise<void>;

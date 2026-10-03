@@ -36,6 +36,7 @@ yarn-error.*
 .env*.local
 apps/api/dist/
 apps/api/.env
+apps/api/.load-test-state.jsonl
 
 # typescript
 *.tsbuildinfo
