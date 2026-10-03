@@ -78,7 +78,7 @@ export function getBook(bookId: string) {
 }
 
 export function completeBookUpload(bookId: string) {
-  return apiRequest<{ book: ApiBook; job: { id: string; status: string; progress_percent: number } }>(`/books/${encodeURIComponent(bookId)}/upload-complete`, { method: 'POST', body: JSON.stringify({}) });
+  return apiRequest<{ book: ApiBook; job: { id: string; status: string; progress_percent: number } | null; duplicate?: boolean; existingBookId?: string; title?: string; message?: string }>(`/books/${encodeURIComponent(bookId)}/upload-complete`, { method: 'POST', body: JSON.stringify({}) });
 }
 export function failBookUpload(bookId: string) { return apiRequest<{ id: string; status: 'UPLOAD_FAILED' }>(`/books/${encodeURIComponent(bookId)}/upload-failed`, { method: 'POST', body: JSON.stringify({}) }); }
 export function retryBookUpload(bookId: string) { return apiRequest<CreateBookResponse>(`/books/${encodeURIComponent(bookId)}/upload-retry`, { method: 'POST', body: JSON.stringify({}) }); }

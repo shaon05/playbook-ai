@@ -84,9 +84,16 @@ export default function UploadScreen() {
     const sameFailedAsset = lastFile?.uri === asset.uri ? failedBookId.current ?? undefined : undefined;
     try {
       const { uploadDocument } = await import('@/services/book-upload');
-      const book = await uploadDocument(asset, () => undefined, retryBookId ?? sameFailedAsset);
+      const result = await uploadDocument(asset, () => undefined, retryBookId ?? sameFailedAsset);
       failedBookId.current = null;
-      router.replace(`/processing/${book.id}`);
+      if (result.duplicate) {
+        Alert.alert(result.title ?? 'Already in your Library', result.message ?? 'This document has already been added.', [
+          { text: 'View Document', onPress: () => router.replace(`/book/${result.existingBookId ?? result.book.id}`) },
+          { text: 'Back to Library', onPress: () => router.replace('/library') },
+        ]);
+        return;
+      }
+      router.replace(`/processing/${result.book.id}`);
     } catch (error) {
       const candidate = error && typeof error === 'object' && 'bookId' in error && typeof error.bookId === 'string' ? error.bookId : null;
       if (candidate) failedBookId.current = candidate;

@@ -34,7 +34,9 @@ function safeUploadError(error: unknown) {
   };
 }
 
-export async function uploadDocument(asset: DocumentPickerAsset, onProgress: (progress: UploadProgress) => void, retryBookId?: string): Promise<ApiBook> {
+export type UploadDocumentResult = { book: ApiBook; duplicate?: boolean; existingBookId?: string; title?: string; message?: string };
+
+export async function uploadDocument(asset: DocumentPickerAsset, onProgress: (progress: UploadProgress) => void, retryBookId?: string): Promise<UploadDocumentResult> {
   const mimeType = (asset.mimeType?.toLowerCase() || 'application/pdf') as SupportedDocumentMimeType;
   const file = new File(asset.uri);
   const sizeBytes = file.size;
@@ -66,7 +68,7 @@ export async function uploadDocument(asset: DocumentPickerAsset, onProgress: (pr
   catch (error) { logUploadStage('UPLOAD_COMPLETION_FAILED', { bookId: prepared.book.id, ...safeUploadError(error) }); throw error; }
   logUploadStage('UPLOAD_COMPLETION_SUCCEEDED', { bookId: prepared.book.id });
   onProgress({ phase: 'complete', percent: 100 });
-  return completed.book;
+  return completed;
 }
 
 export const uploadPdf = uploadDocument;

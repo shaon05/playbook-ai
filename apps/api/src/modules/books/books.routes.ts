@@ -15,6 +15,7 @@ import { validateDocumentBytes } from "../../security/document-validator";
 import { createSupabaseAdminClient } from "../../lib/supabase-admin";
 import { recordSecurityEvent } from "../../security/enforcement";
 import { isVisibleInLibrary } from "./book-visibility";
+import { duplicateMessageForStatus, isActiveDuplicateConstraintError } from "./private-library-duplicates";
 
 const uuidSchema = z.string().uuid();
 const createBookSchema = z.object({
@@ -151,11 +152,12 @@ export function createBooksRouter(env: ApiEnv, storage: StorageProvider, clientF
       const uploadRecord = await client.from("document_uploads").select("id,security_status,validation_status,declared_mime_type").eq("book_id", bookId).eq("user_id", req.auth!.id).maybeSingle();
       if (uploadRecord.error || !uploadRecord.data) throw new ApiError(500, "UPLOAD_RECORD_LOOKUP_FAILED", "Unable to verify this document upload.");
       const tempPath = path.join(os.tmpdir(), `playbook-upload-${uploadRecord.data.id}`); const admin = env.SUPABASE_SERVICE_ROLE_KEY ? createSupabaseAdminClient(env) : client;
+      let sourceSha256: string | null = null;
       stage = "document_security_validation";
       try {
         await client.from("document_uploads").update({ security_status: "SCANNING", file_size_bytes: metadata.contentLength }).eq("id", uploadRecord.data.id).eq("user_id", req.auth!.id);
         await storage.downloadObject({ key: file.storage_key, destination: tempPath });
-        const bytes = new Uint8Array(await import("node:fs/promises").then((fs) => fs.readFile(tempPath))); const hash = createHash("sha256").update(bytes).digest("hex");
+        const bytes = new Uint8Array(await import("node:fs/promises").then((fs) => fs.readFile(tempPath))); const hash = createHash("sha256").update(bytes).digest("hex"); sourceSha256 = hash;
         const validation = await validateDocumentBytes(bytes, uploadRecord.data.declared_mime_type, env.MAX_IMAGE_PIXELS);
         if (!validation.valid) { const reference = await recordSecurityEvent(admin, { uploadId: uploadRecord.data.id, userId: req.auth!.id, eventType: validation.reasonCode === "FILE_TYPE_MISMATCH" ? "FILE_TYPE_MISMATCH" : "UNSUPPORTED_FILE_TYPE", severity: "LOW", reasonCode: validation.reasonCode ?? "INVALID_DOCUMENT", safeSummary: validation.summary ?? "The document could not be accepted.", detectedFileType: validation.detectedMimeType, fileSha256: hash }); await client.from("document_uploads").update({ security_status: "REJECTED", validation_status: "INVALID", detected_mime_type: validation.detectedMimeType, sha256: hash, incident_reference: reference }).eq("id", uploadRecord.data.id).eq("user_id", req.auth!.id); throw new ApiError(400, "INVALID_DOCUMENT", `${validation.summary ?? "The document could not be accepted."} Reference ${reference}.`); }
         const scan = scanner ? await scanner.scan({ bucket: env.QUARANTINE_BUCKET ?? env.AWS_S3_BUCKET, storageKey: file.storage_key, uploadId: uploadRecord.data.id, sha256: hash }) : { status: "SCAN_FAILED" as const, provider: "none", code: "SCANNER_NOT_CONFIGURED" };
@@ -163,9 +165,18 @@ export function createBooksRouter(env: ApiEnv, storage: StorageProvider, clientF
         if (scan.status !== "CLEAN") { const severity = scan.status === "MALICIOUS" ? "HIGH" : "MEDIUM"; const reference = await recordSecurityEvent(admin, { uploadId: uploadRecord.data.id, userId: req.auth!.id, eventType: scan.status === "MALICIOUS" ? "MALWARE_DETECTED" : "SUSPICIOUS_PAYLOAD", severity, reasonCode: scan.code, safeSummary: scan.status === "MALICIOUS" ? "This file could not be accepted for security reasons." : "This file could not be safely verified.", fileSha256: hash, scannerProvider: scan.provider, scannerResultCode: scan.code }); await client.from("document_uploads").update({ security_status: scan.status, validation_status: "PENDING", sha256: hash, incident_reference: reference }).eq("id", uploadRecord.data.id).eq("user_id", req.auth!.id); throw new ApiError(400, "SECURITY_REJECTED", `This file could not be accepted for security reasons. Reference ${reference}.`); }
         await client.from("document_uploads").update({ security_status: "CLEAN", validation_status: "VALID", detected_mime_type: validation.detectedMimeType, sha256: hash }).eq("id", uploadRecord.data.id).eq("user_id", req.auth!.id);
       } finally { await rm(tempPath, { force: true }); }
-      const { data: updated, error: updateError } = await client.from("books").update({ status: "UPLOADED" }).eq("id", bookId).eq("user_id", req.auth!.id).select("id,user_id,title,author,status,original_filename,mime_type,file_size_bytes,created_at,updated_at").single();
+      const { data: updated, error: updateError } = await client.from("books").update({ status: "UPLOADED", source_sha256: sourceSha256 }).eq("id", bookId).eq("user_id", req.auth!.id).select("id,user_id,title,author,status,original_filename,mime_type,file_size_bytes,created_at,updated_at").single();
+      if (isActiveDuplicateConstraintError(updateError)) {
+        const { data: existingBook, error: duplicateLookupError } = await client.from("books").select("id,user_id,title,author,status,original_filename,mime_type,file_size_bytes,created_at,updated_at").eq("user_id", req.auth!.id).eq("source_sha256", sourceSha256).is("deleted_at", null).maybeSingle();
+        if (duplicateLookupError || !existingBook) throw new ApiError(500, "BOOK_UPDATE_FAILED", "Unable to complete the book upload.");
+        const { data: existingJob } = await client.from("processing_jobs").select("id,status,progress_percent").eq("book_id", existingBook.id).eq("user_id", req.auth!.id).eq("job_type", "DOCUMENT_EXTRACTION").order("created_at", { ascending: false }).limit(1).maybeSingle();
+        const duplicate = duplicateMessageForStatus(existingBook.status);
+        await client.from("books").update({ deleted_at: new Date().toISOString() }).eq("id", bookId).eq("user_id", req.auth!.id).is("deleted_at", null);
+        try { await storage.deleteObject({ key: file.storage_key }); } catch (error) { console.error(JSON.stringify({ event: "private_duplicate_cleanup_failed", bookId, message: error instanceof Error ? error.message : "storage cleanup failed" })); }
+        return res.json({ data: { book: existingBook, job: existingJob ?? null, duplicate: true, existingBookId: existingBook.id, title: duplicate.title, message: duplicate.message } });
+      }
       if (updateError || !updated) throw new ApiError(500, "BOOK_UPDATE_FAILED", "Unable to complete the book upload.");
-      await client.from("book_files").update({ etag: metadata.etag ?? null }).eq("id", file.id).eq("user_id", req.auth!.id);
+      await client.from("book_files").update({ etag: metadata.etag ?? null, source_sha256: sourceSha256 }).eq("id", file.id).eq("user_id", req.auth!.id);
       stage = "processing_job_creation";
       const { data: job, error: jobError } = await client.from("processing_jobs").insert({ user_id: req.auth!.id, book_id: bookId, job_type: "DOCUMENT_EXTRACTION", status: "QUEUED", progress_percent: 0 }).select("id,status,progress_percent").single();
       if (jobError || !job) {

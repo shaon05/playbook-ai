@@ -163,6 +163,7 @@ async function runOnce() {
     const bytes = new Uint8Array(await readFile(sourcePath));
     const sourceHash = createHash("sha256").update(bytes).digest("hex");
     await db.from("book_files").update({ source_sha256: sourceHash }).eq("id", file.id).eq("user_id", job.user_id);
+    await db.from("books").update({ source_sha256: sourceHash }).eq("id", job.book_id).eq("user_id", job.user_id).is("deleted_at", null);
     if (job.creator_submission_id) await db.from("creator_submissions").update({ source_sha256: sourceHash }).eq("id", job.creator_submission_id);
     const { data: sourceAsset } = await db.from("content_assets").select("*").eq("source_sha256", sourceHash).eq("extraction_pipeline_version", env.EXTRACTION_PIPELINE_VERSION).maybeSingle();
     if (sourceAsset?.status === "TEXT_READY" || sourceAsset?.status === "OCR_REQUIRED") {
